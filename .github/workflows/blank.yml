@@ -13,6 +13,8 @@ jobs:
         with:
           java-version: '8'
           distribution: 'adopt'
+      - name: Get NMS dependency via BuildTools
+        run: wget https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar; java -jar BuildTools.jar --rev 1.8.8;
       - name: Build with Gradle
-        run: wget https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar; java -jar BuildTools.jar --rev 1.8.8; ./gradlew build
+        run: ./gradlew build
         
