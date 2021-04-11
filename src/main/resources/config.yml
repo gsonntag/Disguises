@@ -1,0 +1,5 @@
+host: 'localhost'
+username: 'disguises'
+database: 'disguises'
+password: 'disguises'
+port: '3306'

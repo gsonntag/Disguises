@@ -1,0 +1,13 @@
+name: Disguises
+version: @version@
+main: me.dkm.disguises.Disguises
+api-version: 1.16
+authors: [ DKM ]
+commands:
+  disguise:
+    aliases: [d]
+  undisguise:
+    aliases: [ud]
+  redisguise:
+    aliases: [rd]
+  name:
