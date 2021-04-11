@@ -14,4 +14,5 @@ jobs:
           java-version: '11'
           distribution: 'adopt'
       - name: Build with Gradle
-        run: ./gradlew build
+        run: ./gradlew build; wget https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar;ls $HOME/.m2/repository/org/spigotmc/spigot/1.8.8-R0.1-SNAPSHOT >> /dev/null2>&1 || java -jar BuildTools.jar --rev 1.8.8 >> /dev/null 2>&1
+        
