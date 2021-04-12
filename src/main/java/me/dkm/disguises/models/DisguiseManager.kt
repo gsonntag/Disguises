@@ -10,35 +10,52 @@ import net.minecraft.server.v1_8_R3.*
 import org.bukkit.Bukkit
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.Listener
+import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.plugin.Plugin
 import org.bukkit.scheduler.BukkitRunnable
 import java.lang.RuntimeException
 import java.util.*
 import kotlin.collections.ArrayList
 
-class DisguiseManager(val plugin: Disguises) {
+class DisguiseManager(val plugin: Plugin, dbInfo: DatabaseInfo): Listener /* Contains join and leave listeners */ {
 
     private val activeDisguises = mutableListOf<Disguise>()
 
     val httpUtility = HTTPUtility(plugin)
 
-    fun disguise(player: Player, disguise: Disguise, join: Boolean) {
+    private val sqlManager = SQLManager(dbInfo)
+
+    init {
+        plugin.server.pluginManager.registerEvents(this, plugin)
+    }
+
+    private fun disguise(player: Player, disguise: Disguise, join: Boolean) {
         if(!join) {
             val lp = LuckPermsProvider.get()
             val user = lp.userManager.getUser(player.uniqueId) ?: return
             user.data().add(PrefixNode.builder(disguise.rank.prefix, 100).build())
+            object : BukkitRunnable() {
+                override fun run() {
+                    disguise1(player, disguise, join)
+                }
+            }.runTaskLater(plugin, 2)
+            return
         }
-        object : BukkitRunnable() {
-            override fun run() {
-                val profile = getProfile(player)
-                setName(profile, disguise.name)
-                setId(profile, disguise.id)
-                player.displayName = disguise.name
-                removeSkin(profile)
-                setSkin(profile, disguise.skin)
-                sendOnTheFlyPackets(player as CraftPlayer, !join)
-                activeDisguises.add(disguise)
-            }
-        }.runTaskLater(plugin, 2)
+        disguise1(player, disguise, join)
+    }
+
+    private fun disguise1(player: Player, disguise: Disguise, join: Boolean) {
+        val profile = getProfile(player)
+        setName(profile, disguise.name)
+        setId(profile, disguise.id)
+        player.displayName = disguise.name
+        removeSkin(profile)
+        setSkin(profile, disguise.skin)
+        sendOnTheFlyPackets(player as CraftPlayer, !join)
+        activeDisguises.add(disguise)
     }
 
     private fun getProfile(player: Player): GameProfile {
@@ -137,19 +154,45 @@ class DisguiseManager(val plugin: Disguises) {
         }
     }
 
-    fun removePlayer(plr: Player) {
-        ArrayList(activeDisguises).forEach {
-            if(plr.uniqueId == it.id)
-                activeDisguises.remove(it)
-        }
-    }
-
-    fun convertSkin(plr: Player): ISkin {
+    private fun convertSkin(plr: Player): ISkin {
         val profile = (plr as CraftPlayer).profile
         val list = profile.properties.get("textures");
         if(list.isEmpty()) throw RuntimeException("Textures list is empty")
         val skin = list.iterator().next()
         return Skin(skin.value, skin.signature)
+    }
+
+    fun createDisguise(plr: Player, name: String, skin: ISkin, rank: Rank?) {
+        val disguise = Disguise(
+            true,
+            name,
+            plr.name,
+            plr.uniqueId,
+            plr.uniqueId,
+            skin,
+            convertSkin(plr),
+            rank ?: Rank.VIP
+        )
+        sqlManager.addDisguise(disguise)
+        disguise(plr, disguise, false)
+    }
+
+    @EventHandler
+    fun onJoin(e: PlayerJoinEvent) {
+        e.joinMessage = null
+        e.player.displayName = e.player.name
+        val disguise = sqlManager.getDisguise(e.player) ?: return
+        if(!disguise.active) return
+        disguise(e.player, disguise, true)
+    }
+
+    @EventHandler
+    fun onQuit(e: PlayerQuitEvent) {
+        e.quitMessage = null
+        ArrayList(activeDisguises).forEach {
+            if(e.player.uniqueId == it.id)
+                activeDisguises.remove(it)
+        }
     }
 
     companion object {

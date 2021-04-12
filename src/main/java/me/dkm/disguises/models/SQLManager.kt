@@ -2,12 +2,13 @@ package me.dkm.disguises.models
 
 import me.dkm.disguises.Disguises
 import org.bukkit.entity.Player
+import org.bukkit.plugin.Plugin
 import java.lang.NullPointerException
 import java.sql.Connection
 import java.sql.DriverManager
 import java.util.*
 
-class SQLManager(val plugin: Disguises) {
+class SQLManager(dbInfo: DatabaseInfo) {
 
     companion object {
         const val TABLE_NAME = "disguises"
@@ -17,12 +18,7 @@ class SQLManager(val plugin: Disguises) {
 
     init {
         Class.forName("com.mysql.jdbc.Driver")
-        val host = plugin.config.getString("host") ?: throw NullPointerException("host")
-        val port = plugin.config.getString("port") ?: throw NullPointerException("port")
-        val database = plugin.config.getString("database") ?: throw NullPointerException("db")
-        val username = plugin.config.getString("username") ?: throw NullPointerException("username")
-        val password = plugin.config.getString("password") ?: throw NullPointerException("passwd")
-        connection = DriverManager.getConnection("jdbc:mysql://$host:$port/$database", username, password)
+        connection = DriverManager.getConnection("jdbc:mysql://${dbInfo.host}:${dbInfo.port}/${dbInfo.database}", dbInfo.username, dbInfo.password)
         executeStatement(
                 "create table if not exists $TABLE_NAME(" +
                         "active tinyint," +

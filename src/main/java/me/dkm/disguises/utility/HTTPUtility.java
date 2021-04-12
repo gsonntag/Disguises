@@ -3,6 +3,7 @@ package me.dkm.disguises.utility;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.bukkit.Bukkit;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.json.JSONObject;
 
@@ -13,13 +14,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
+/* Credit: Jordan Osterberg on YouTube */
 public class HTTPUtility {
-    private final JavaPlugin plugin;
+    private final Plugin plugin;
     private final Cache<String, String[]> cachedSkinResponses = CacheBuilder.newBuilder()
-    .expireAfterWrite(5L, TimeUnit.MINUTES)
-    .build();
+            .expireAfterWrite(5L, TimeUnit.MINUTES)
+            .build();
 
-    public HTTPUtility(JavaPlugin plugin) {
+    public HTTPUtility(Plugin plugin) {
         this.plugin = plugin;
     }
 
@@ -49,9 +51,9 @@ public class HTTPUtility {
             }
 
             getTextureAndSignatureFromUUID(uuid, ((texture, signature) -> {
-            cachedSkinResponses.put(playerName, new String[]{texture, signature});
-            response.handle(texture, signature);
-        }));
+                cachedSkinResponses.put(playerName, new String[]{texture, signature});
+                response.handle(texture, signature);
+            }));
         }));
     }
 
